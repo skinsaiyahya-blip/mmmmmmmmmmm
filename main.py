@@ -58,6 +58,8 @@ async def load_cogs():
         "bot.commands.scan_passwords",
         "bot.commands.scan_env",
         "bot.commands.scan_ssh",
+        "bot.commands.scan_member",
+        "bot.commands.report_scan",
         "bot.commands.scan_all",
         "bot.events",
     ]

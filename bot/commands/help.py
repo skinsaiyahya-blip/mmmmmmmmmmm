@@ -36,7 +36,17 @@ class HelpCommand(commands.Cog):
 `/scan_passwords` - Scan for saved browser passwords
 `/scan_env` - Scan for secrets in .env files
 `/scan_ssh` - Scan for SSH keys
+`/scan_member` - Select a server member to scan
 `/scan_all` - Run full security audit (requires all consents)
+            """,
+            inline=False
+        )
+        
+        embed.add_field(
+            name="👥 Member Scanning",
+            value="""
+`/report_scan` - Submit YOUR scan results to the server
+`/view_member_scans` - View all member scan results (admin only)
             """,
             inline=False
         )

