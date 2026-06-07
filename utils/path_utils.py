@@ -1,6 +1,10 @@
 import os
 import platform
 
+def is_windows():
+    """Check if running on Windows"""
+    return os.name == 'nt'
+
 def get_user_home():
     """Get user home directory cross-platform"""
     return os.path.expanduser("~")
