@@ -32,18 +32,18 @@ Get your bot token: https://discord.com/developers/applications
 python main.py
 ```
 
-## 📋 Available Commands
+## 📋 Available Commands (Slash Commands)
 
-- `!help_ethical` - Show all commands
-- `!consent_tokens` - Request consent to scan Discord tokens
-- `!scan_tokens` - Scan for Discord tokens
-- `!consent_passwords` - Request consent to scan browser passwords
-- `!scan_passwords` - Scan saved browser passwords
-- `!consent_env` - Request consent to scan .env files
-- `!scan_env` - Scan for exposed secrets
-- `!consent_all` - Grant consent for all scans
-- `!scan_all` - Run full security audit
-- `!revoke_consent` - Revoke all consents
+- `/help_ethical` - Show all commands
+- `/consent_tokens` - Request consent to scan Discord tokens
+- `/scan_tokens` - Scan for exposed tokens
+- `/consent_passwords` - Request consent to scan browser passwords
+- `/scan_passwords` - Scan saved browser passwords
+- `/consent_env` - Request consent to scan .env files
+- `/scan_env` - Scan for exposed secrets
+- `/consent_all` - Grant consent for all scans
+- `/scan_all` - Run full security audit
+- `/revoke_consent` - Revoke all consents
 
 ## 🔐 Security Features
 

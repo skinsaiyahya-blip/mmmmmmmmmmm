@@ -1,6 +1,26 @@
 import discord
 from discord.ext import commands
+from discord import app_commands, ui
 from core.consent_manager import ConsentManager
+
+class ConfirmView(ui.View):
+    """Reusable confirmation view with YES/NO buttons"""
+    
+    def __init__(self, timeout=60.0):
+        super().__init__(timeout=timeout)
+        self.result = None
+    
+    @ui.button(label="YES", style=discord.ButtonStyle.green)
+    async def yes_button(self, interaction: discord.Interaction, button: ui.Button):
+        self.result = True
+        self.stop()
+        await interaction.response.defer()
+    
+    @ui.button(label="NO", style=discord.ButtonStyle.red)
+    async def no_button(self, interaction: discord.Interaction, button: ui.Button):
+        self.result = False
+        self.stop()
+        await interaction.response.defer()
 
 class ConsentCommands(commands.Cog):
     """Consent management commands"""
@@ -9,10 +29,10 @@ class ConsentCommands(commands.Cog):
         self.bot = bot
         self.consent_mgr = ConsentManager()
     
-    @commands.command(name='consent_tokens')
-    async def consent_tokens(self, ctx):
+    @app_commands.command(name="consent_tokens", description="Request consent to scan for Discord/API tokens")
+    async def consent_tokens(self, interaction: discord.Interaction):
         """Request consent to scan for tokens"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         embed = discord.Embed(
             title="🔐 Token Scan Consent Request",
@@ -25,32 +45,29 @@ class ConsentCommands(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="📊 Reply with:",
-            value="`YES` to grant consent\n`NO` to deny",
+            name="📊 Click YES or NO:",
+            value="Your response will determine if scanning is allowed",
             inline=False
         )
         
-        await ctx.author.send(embed=embed)
+        view = ConfirmView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         
-        def check(m):
-            return m.author.id == user_id and m.content.upper() in ['YES', 'NO']
+        await view.wait()
         
-        try:
-            msg = await self.bot.wait_for('message', check=check, timeout=60.0)
-            
-            if msg.content.upper() == 'YES':
-                self.consent_mgr.log_consent(user_id, 'tokens', True)
-                await ctx.author.send("✅ Token scanning consent granted!")
-            else:
-                self.consent_mgr.log_consent(user_id, 'tokens', False)
-                await ctx.author.send("❌ Token scanning consent denied")
-        except:
-            await ctx.author.send("⏱️ Consent request timed out")
+        if view.result is None:
+            await interaction.followup.send("⏱️ Consent request timed out", ephemeral=True)
+        elif view.result:
+            self.consent_mgr.log_consent(user_id, 'tokens', True)
+            await interaction.followup.send("✅ Token scanning consent granted!", ephemeral=True)
+        else:
+            self.consent_mgr.log_consent(user_id, 'tokens', False)
+            await interaction.followup.send("❌ Token scanning consent denied", ephemeral=True)
     
-    @commands.command(name='consent_passwords')
-    async def consent_passwords(self, ctx):
+    @app_commands.command(name="consent_passwords", description="Request consent to scan for saved browser passwords")
+    async def consent_passwords(self, interaction: discord.Interaction):
         """Request consent to scan for passwords"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         embed = discord.Embed(
             title="🔐 Password Scan Consent Request",
@@ -63,32 +80,29 @@ class ConsentCommands(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="📊 Reply with:",
-            value="`YES` to grant consent\n`NO` to deny",
+            name="📊 Click YES or NO:",
+            value="Your response will determine if scanning is allowed",
             inline=False
         )
         
-        await ctx.author.send(embed=embed)
+        view = ConfirmView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         
-        def check(m):
-            return m.author.id == user_id and m.content.upper() in ['YES', 'NO']
+        await view.wait()
         
-        try:
-            msg = await self.bot.wait_for('message', check=check, timeout=60.0)
-            
-            if msg.content.upper() == 'YES':
-                self.consent_mgr.log_consent(user_id, 'passwords', True)
-                await ctx.author.send("✅ Password scanning consent granted!")
-            else:
-                self.consent_mgr.log_consent(user_id, 'passwords', False)
-                await ctx.author.send("❌ Password scanning consent denied")
-        except:
-            await ctx.author.send("⏱️ Consent request timed out")
+        if view.result is None:
+            await interaction.followup.send("⏱️ Consent request timed out", ephemeral=True)
+        elif view.result:
+            self.consent_mgr.log_consent(user_id, 'passwords', True)
+            await interaction.followup.send("✅ Password scanning consent granted!", ephemeral=True)
+        else:
+            self.consent_mgr.log_consent(user_id, 'passwords', False)
+            await interaction.followup.send("❌ Password scanning consent denied", ephemeral=True)
     
-    @commands.command(name='consent_env')
-    async def consent_env(self, ctx):
+    @app_commands.command(name="consent_env", description="Request consent to scan for secrets in .env files")
+    async def consent_env(self, interaction: discord.Interaction):
         """Request consent to scan .env files"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         embed = discord.Embed(
             title="🔐 Environment Scan Consent Request",
@@ -101,32 +115,29 @@ class ConsentCommands(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="📊 Reply with:",
-            value="`YES` to grant consent\n`NO` to deny",
+            name="📊 Click YES or NO:",
+            value="Your response will determine if scanning is allowed",
             inline=False
         )
         
-        await ctx.author.send(embed=embed)
+        view = ConfirmView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         
-        def check(m):
-            return m.author.id == user_id and m.content.upper() in ['YES', 'NO']
+        await view.wait()
         
-        try:
-            msg = await self.bot.wait_for('message', check=check, timeout=60.0)
-            
-            if msg.content.upper() == 'YES':
-                self.consent_mgr.log_consent(user_id, 'env', True)
-                await ctx.author.send("✅ Environment scanning consent granted!")
-            else:
-                self.consent_mgr.log_consent(user_id, 'env', False)
-                await ctx.author.send("❌ Environment scanning consent denied")
-        except:
-            await ctx.author.send("⏱️ Consent request timed out")
+        if view.result is None:
+            await interaction.followup.send("⏱️ Consent request timed out", ephemeral=True)
+        elif view.result:
+            self.consent_mgr.log_consent(user_id, 'env', True)
+            await interaction.followup.send("✅ Environment scanning consent granted!", ephemeral=True)
+        else:
+            self.consent_mgr.log_consent(user_id, 'env', False)
+            await interaction.followup.send("❌ Environment scanning consent denied", ephemeral=True)
     
-    @commands.command(name='consent_all')
-    async def consent_all(self, ctx):
+    @app_commands.command(name="consent_all", description="Request consent for ALL security scans")
+    async def consent_all(self, interaction: discord.Interaction):
         """Request consent for all scans"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         embed = discord.Embed(
             title="🔐 Full Audit Consent Request",
@@ -145,34 +156,31 @@ class ConsentCommands(commands.Cog):
             inline=False
         )
         embed.add_field(
-            name="📊 Reply with:",
-            value="`YES` to grant consent\n`NO` to deny",
+            name="📊 Click YES or NO:",
+            value="Your response will determine if full audit is allowed",
             inline=False
         )
         
-        await ctx.author.send(embed=embed)
+        view = ConfirmView()
+        await interaction.response.send_message(embed=embed, view=view, ephemeral=True)
         
-        def check(m):
-            return m.author.id == user_id and m.content.upper() in ['YES', 'NO']
+        await view.wait()
         
-        try:
-            msg = await self.bot.wait_for('message', check=check, timeout=60.0)
-            
-            if msg.content.upper() == 'YES':
-                self.consent_mgr.log_consent(user_id, 'all', True, "Full audit consent granted")
-                await ctx.author.send("✅ Full audit consent granted!")
-            else:
-                self.consent_mgr.log_consent(user_id, 'all', False)
-                await ctx.author.send("❌ Full audit consent denied")
-        except:
-            await ctx.author.send("⏱️ Consent request timed out")
+        if view.result is None:
+            await interaction.followup.send("⏱️ Consent request timed out", ephemeral=True)
+        elif view.result:
+            self.consent_mgr.log_consent(user_id, 'all', True, "Full audit consent granted")
+            await interaction.followup.send("✅ Full audit consent granted!", ephemeral=True)
+        else:
+            self.consent_mgr.log_consent(user_id, 'all', False)
+            await interaction.followup.send("❌ Full audit consent denied", ephemeral=True)
     
-    @commands.command(name='revoke_consent')
-    async def revoke_consent(self, ctx):
+    @app_commands.command(name="revoke_consent", description="Revoke all granted consents")
+    async def revoke_consent(self, interaction: discord.Interaction):
         """Revoke all consents"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         self.consent_mgr.revoke_all_consent(user_id)
-        await ctx.author.send("✅ All consents have been revoked!")
+        await interaction.response.send_message("✅ All consents have been revoked!", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(ConsentCommands(bot))

@@ -12,6 +12,7 @@ Usage:
 import asyncio
 import discord
 from discord.ext import commands
+from discord import app_commands
 import logging
 from config import DISCORD_BOT_TOKEN, OWNER_DISCORD_ID
 from utils.logger import logger
@@ -20,9 +21,9 @@ import os
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 
-# Create bot
+# Create bot with slash commands (no prefix needed)
 intents = discord.Intents.default()
-intents.message_content = True
+intents.message_content = False
 intents.members = False
 intents.presences = False
 

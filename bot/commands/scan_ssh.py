@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from core.consent_manager import ConsentManager
 from core.ssh_scanner import SSHScanner
 
@@ -11,16 +12,16 @@ class SSHScanCommand(commands.Cog):
         self.consent_mgr = ConsentManager()
         self.scanner = SSHScanner()
     
-    @commands.command(name='scan_ssh')
-    async def scan_ssh(self, ctx):
+    @app_commands.command(name="scan_ssh", description="Scan for SSH keys")
+    async def scan_ssh(self, interaction: discord.Interaction):
         """Scan for SSH keys"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         if not self.consent_mgr.has_consent(user_id, 'all'):
-            await ctx.author.send("❌ SSH scanning requires full audit consent! Use `!consent_all`")
+            await interaction.response.send_message("❌ SSH scanning requires full audit consent! Use `/consent_all`", ephemeral=True)
             return
         
-        await ctx.author.send("🔍 Scanning for SSH keys...")
+        await interaction.response.defer(ephemeral=True)
         
         try:
             keys = self.scanner.scan_ssh_keys()
@@ -38,10 +39,15 @@ SSH Keys Found: {len(keys)}
 ⚠️ SSH private keys should NEVER be exposed!
             """
             
-            await ctx.author.send(report)
+            if len(report) > 2000:
+                await interaction.followup.send(report[:2000], ephemeral=True)
+                await interaction.followup.send(report[2000:], ephemeral=True)
+            else:
+                await interaction.followup.send(report, ephemeral=True)
+            
             self.consent_mgr.log_consent(user_id, 'ssh', True, f"Scan complete - {len(keys)} keys found")
         except Exception as e:
-            await ctx.author.send(f"❌ Error during scan: {str(e)}")
+            await interaction.followup.send(f"❌ Error during scan: {str(e)}", ephemeral=True)
     
     def _format_keys(self, keys):
         """Format SSH keys for display"""

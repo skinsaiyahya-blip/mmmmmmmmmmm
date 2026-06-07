@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 
 class HelpCommand(commands.Cog):
     """Help and information commands"""
@@ -7,8 +8,8 @@ class HelpCommand(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.command(name='help_ethical')
-    async def help_ethical(self, ctx):
+    @app_commands.command(name="help_ethical", description="Show all available commands")
+    async def help_ethical(self, interaction: discord.Interaction):
         """Show all available commands"""
         embed = discord.Embed(
             title="🛡️ Ethical Security Bot - Commands",
@@ -19,11 +20,11 @@ class HelpCommand(commands.Cog):
         embed.add_field(
             name="📋 Consent Management",
             value="""
-`!consent_tokens` - Ask for token scanning consent
-`!consent_passwords` - Ask for password scanning consent
-`!consent_env` - Ask for .env scanning consent
-`!consent_all` - Ask for all scan consents
-`!revoke_consent` - Revoke all granted consents
+`/consent_tokens` - Ask for token scanning consent
+`/consent_passwords` - Ask for password scanning consent
+`/consent_env` - Ask for .env scanning consent
+`/consent_all` - Ask for all scan consents
+`/revoke_consent` - Revoke all granted consents
             """,
             inline=False
         )
@@ -31,11 +32,11 @@ class HelpCommand(commands.Cog):
         embed.add_field(
             name="🔍 Security Scans",
             value="""
-`!scan_tokens` - Scan for exposed Discord/API tokens
-`!scan_passwords` - Scan for saved browser passwords
-`!scan_env` - Scan for secrets in .env files
-`!scan_ssh` - Scan for SSH keys
-`!scan_all` - Run full security audit (requires all consents)
+`/scan_tokens` - Scan for exposed Discord/API tokens
+`/scan_passwords` - Scan for saved browser passwords
+`/scan_env` - Scan for secrets in .env files
+`/scan_ssh` - Scan for SSH keys
+`/scan_all` - Run full security audit (requires all consents)
             """,
             inline=False
         )
@@ -52,7 +53,7 @@ class HelpCommand(commands.Cog):
             inline=False
         )
         
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 async def setup(bot):
     await bot.add_cog(HelpCommand(bot))

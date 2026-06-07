@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from core.consent_manager import ConsentManager
 from core.token_scanner import TokenScanner
 from core.password_scanner import PasswordScanner
@@ -21,16 +22,17 @@ class ScanAllCommand(commands.Cog):
         self.ssh_scanner = SSHScanner()
         self.cookie_scanner = CookieScanner()
     
-    @commands.command(name='scan_all')
-    async def scan_all(self, ctx):
+    @app_commands.command(name="scan_all", description="Run FULL security audit (requires all consents)")
+    async def scan_all(self, interaction: discord.Interaction):
         """Run full security audit"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         if not self.consent_mgr.has_consent(user_id, 'all'):
-            await ctx.author.send("❌ Full audit requires all consent! Use `!consent_all`")
+            await interaction.response.send_message("❌ Full audit requires all consent! Use `/consent_all`", ephemeral=True)
             return
         
-        await ctx.author.send("🔍 Running FULL SECURITY AUDIT... This may take a moment...")
+        await interaction.response.defer(ephemeral=True)
+        await interaction.followup.send("🔍 Running FULL SECURITY AUDIT... This may take a moment...", ephemeral=True)
         
         try:
             results = {
@@ -48,13 +50,13 @@ class ScanAllCommand(commands.Cog):
             if len(formatted) > 2000:
                 chunks = [formatted[i:i+1900] for i in range(0, len(formatted), 1900)]
                 for chunk in chunks:
-                    await ctx.author.send(f"```\n{chunk}\n```")
+                    await interaction.followup.send(f"```\n{chunk}\n```", ephemeral=True)
             else:
-                await ctx.author.send(f"```\n{formatted}\n```")
+                await interaction.followup.send(f"```\n{formatted}\n```", ephemeral=True)
             
             self.consent_mgr.log_consent(user_id, 'all', True, "Full audit completed")
         except Exception as e:
-            await ctx.author.send(f"❌ Error during audit: {str(e)}")
+            await interaction.followup.send(f"❌ Error during audit: {str(e)}", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(ScanAllCommand(bot))

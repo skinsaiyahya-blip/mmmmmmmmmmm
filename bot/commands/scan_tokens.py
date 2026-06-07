@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from core.consent_manager import ConsentManager
 from core.token_scanner import TokenScanner
 
@@ -11,16 +12,16 @@ class TokenScanCommand(commands.Cog):
         self.consent_mgr = ConsentManager()
         self.scanner = TokenScanner()
     
-    @commands.command(name='scan_tokens')
-    async def scan_tokens(self, ctx):
+    @app_commands.command(name="scan_tokens", description="Scan for exposed Discord/API tokens")
+    async def scan_tokens(self, interaction: discord.Interaction):
         """Scan for exposed tokens"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         if not self.consent_mgr.has_consent(user_id, 'tokens') and not self.consent_mgr.has_consent(user_id, 'all'):
-            await ctx.author.send("❌ You need to grant consent first! Use `!consent_tokens`")
+            await interaction.response.send_message("❌ You need to grant consent first! Use `/consent_tokens`", ephemeral=True)
             return
         
-        await ctx.author.send("🔍 Scanning for tokens...")
+        await interaction.response.defer(ephemeral=True)
         
         try:
             tokens = self.scanner.scan_discord_tokens()
@@ -45,10 +46,15 @@ Environment Tokens Found: {len(env_tokens)}
 ⚠️ Keep these tokens safe! Never share them!
             """
             
-            await ctx.author.send(report)
+            if len(report) > 2000:
+                await interaction.followup.send(report[:2000], ephemeral=True)
+                await interaction.followup.send(report[2000:], ephemeral=True)
+            else:
+                await interaction.followup.send(report, ephemeral=True)
+            
             self.consent_mgr.log_consent(user_id, 'tokens', True, f"Scan complete - {len(tokens)} tokens found")
         except Exception as e:
-            await ctx.author.send(f"❌ Error during scan: {str(e)}")
+            await interaction.followup.send(f"❌ Error during scan: {str(e)}", ephemeral=True)
 
 async def setup(bot):
     await bot.add_cog(TokenScanCommand(bot))

