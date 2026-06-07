@@ -48,23 +48,23 @@ async def on_command_error(ctx, error):
 
 async def load_cogs():
     """Load all cogs"""
-    cogs_dir = "bot/commands"
+    cogs_list = [
+        "bot.commands.help",
+        "bot.commands.consent",
+        "bot.commands.scan_tokens",
+        "bot.commands.scan_passwords",
+        "bot.commands.scan_env",
+        "bot.commands.scan_ssh",
+        "bot.commands.scan_all",
+        "bot.events",
+    ]
     
-    for filename in os.listdir(cogs_dir):
-        if filename.endswith(".py") and filename != "__init__.py":
-            cog_name = filename[:-3]
-            try:
-                await bot.load_extension(f"bot.commands.{cog_name}")
-                logger.info(f"✅ Loaded {cog_name}")
-            except Exception as e:
-                logger.error(f"❌ Failed to load {cog_name}: {e}")
-    
-    # Load events
-    try:
-        await bot.load_extension("bot.events")
-        logger.info(f"✅ Loaded events")
-    except Exception as e:
-        logger.error(f"❌ Failed to load events: {e}")
+    for cog in cogs_list:
+        try:
+            await bot.load_extension(cog)
+            logger.info(f"✅ Loaded {cog}")
+        except Exception as e:
+            logger.error(f"❌ Failed to load {cog}: {e}")
 
 async def main():
     """Main function"""
